@@ -35,12 +35,12 @@
         let gameOver = false;
         let scoreText;
         let size = 1;
-        let count = 0;
-    
+        let newColor = '';
+
         let game = new Phaser.Game(config);
 
         function preload() {
-            this.load.image('sky', '../assets/images/sky.png');
+            this.load.image('sky', '../assets/images/sky.jpg');
             this.load.image('ground', '../assets/images/platform.png');
             this.load.image('star', '../assets/images/star.png');
             this.load.image('bomb', '../assets/images/bomb.png');
@@ -49,19 +49,23 @@
 
         function create() {
             //  A simple background for our game
-            this.add.image(400, 300, 'sky');
+            let image = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'sky')
+            let scaleX = this.cameras.main.width / image.width
+            let scaleY = this.cameras.main.height / image.height
+            let scale = Math.max(scaleX, scaleY)
+            image.setScale(Math.max(this.cameras.main.width / image.width, this.cameras.main.height / image.height)).setScrollFactor(0)
 
             //  The platforms group contains the ground and the 2 ledges we can jump on
             platforms = this.physics.add.staticGroup();
 
             //  Here we create the ground.
             //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-            platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+            platforms.create(400, 568, 'ground').setScale(2).refreshBody().setTint('#060d41');
 
             //  Now let's create some ledges
-            platforms.create(600, 400, 'ground');
-            platforms.create(50, 250, 'ground');
-            platforms.create(750, 220, 'ground');
+            platforms.create(600, 400, 'ground').setTint('#060d41');
+            platforms.create(50, 250, 'ground').setTint('#060d41');
+            platforms.create(750, 220, 'ground').setTint('#060d41');
 
             // The player and its settings
             player = this.physics.add.sprite(100, 450, 'dude');
@@ -109,7 +113,7 @@
             bombs = this.physics.add.group();
 
             //  The score
-            scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '0x000' });
+            scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#ffffff' });
 
             //  Collide the player and the stars with the platforms
             this.physics.add.collider(player, platforms);
@@ -150,34 +154,42 @@
             score += 10;
             scoreText.setText('Score: ' + score);
             
-            // change colors
-            let colors = [
-                0xf02c44,
-                0xf86c2c,
-                0xf0c22e,
-                0x68bc6c,
-                0x2596be,
-                0x8286ec,
-                0xf0448c]
-
-            let color = colors[Math.floor(Math.random()*colors.length - 1)];
-            player.setTint(color);
-
-            // change size
-            count += 1
-            while (count % 5 == 0) {
-                player.setScale(size += 0.1);
-                count += 1
-            }
-            
             if (stars.countActive(true) < 12) {
                 let x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-                let star = stars.create(x, 16, 'star');
-                star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+                let star = stars.create(x, Math.random(), 'star');
+                star.setBounceY(Phaser.Math.FloatBetween(Math.random(), Math.random()));
                 star.setCollideWorldBounds(true);
-                star.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                star.setVelocity(Phaser.Math.Between(Math.random(), Math.random()), Math.random());
                 star.allowGravity = true;
+            }
+
+            // change size
+            if (score % 50 == 0) {
+                player.setScale(size += 0.1);
+                console.log('big')
+            }
+
+            // change colors
+            let colors = [
+                0xf73c43,
+                0xf85f10,
+                0xfcd251,
+                0x91c349,
+                0x6093ef,
+                0x61c1dd,
+                0xe474ea]
+            let color = colors[Math.floor(Math.random()*colors.length+1)];
+            newColor = color;
+
+            // check for repeating colors
+            while (true) {
+                if (color == newColor) {
+                    color = colors[Math.floor(Math.random()*colors.length+1)];
+                    console.log('different')
+                } else {
+                    player.setTint(color);
+                    return false;
+                }
             }
         }
 
